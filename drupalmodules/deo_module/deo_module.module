@@ -1,0 +1,39 @@
+<?php
+
+function deo_module_theme($existing, $type, $theme, $path) {
+    return array(
+        'deo_module' => array(
+            'variables' => array(
+                'record_title' => NULL,
+                'record_contact' => NULL,
+                'record_contactmail' => NULL,
+                'addressline1' => NULL,
+                'addressline2' => NULL,
+                'addressline3' => NULL,
+                'record_doi' => NULL,
+                'record_publishername' => NULL,
+                'record_description' => NULL,
+                'record_keywords' => NULL,
+                'record_summary' => NULL,
+                'record_link' => NULL,
+                'record_landingpage' =>NULL,
+                'record_id' => NULL,
+
+                ),
+        ),
+        'deo_history' => array(
+            'variables' => array(
+                'record_title' => NULL,
+                'record_modified' => NULL,
+            ),
+        ),
+        'deo_listrecord' => array(
+            'variables' => array(
+                'record_chem' => NULL,
+                'record_phy' => NULL,
+                'record_bio' => NULL,
+                'record_hum' => NULL,
+            ),
+        ),
+    );
+}

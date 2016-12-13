@@ -1,0 +1,6 @@
+name: Deo Module
+description: Creates a module to display data.
+package: Deoyani
+type: module
+version: 1.0
+core: 8.x

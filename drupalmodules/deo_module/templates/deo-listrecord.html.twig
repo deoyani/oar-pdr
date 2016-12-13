@@ -1,0 +1,71 @@
+
+{#Title Section#}
+<div class="row">
+    <h1>Records Examples (PDL and NERDm)</h1>
+
+    You can access any PDL record using ../landingpage/{id} Here are few eaxamples.
+    <br>
+</div>
+
+{#Lists Section#}
+<div class="row">
+
+    <div class="col-md-6">
+        <div class="panel-heading">Physics</div>
+        <div class="panel-body">
+            {{ record_phy }}
+            {% for key, value in record_phy  %}
+                <a href="../landingpage/{{ value.identifier }}"> {{ value.title}}</a></br>
+            {% endfor %}
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="panel-heading">Biometrics</div>
+        <div class="panel-body">
+            {{ record_bio }}
+            {% for key, value in record_bio  %}
+                <a href="../landingpage/{{ value.identifier }}"> {{ value.title}}</a></br>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<div class="row">
+
+    <div class="col-md-6">
+        <div class="panel-heading">Chemistry</div>
+        <div class="panel-body">
+            {{ record_chem }}
+            {% for key, value in record_chem  %}
+                <a href="../landingpage/{{ value.identifier }}"> {{ value.title}}</a></br>
+            {% endfor %}
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="panel-heading">
+            Human Language Technology
+        </div>
+        <div class="panel-body">
+            {{ record_hum }}
+            {% for key, value in record_hum  %}
+                <a href="../landingpage/{{ value.identifier }}"> {{ value.title}}</a></br>
+            {% endfor %}
+        </div>
+    </div>
+
+</div>
+
+<div class="row">
+    <div class="col-md-6">
+        <div class="panel-heading"><b><h3>NERDm Examples</h3></b></div>
+        <div class="panel-body">
+
+            <a href="../newlandingpage/2"> Example 1</a></br>
+            <a href="../newlandingpage/3"> Example 2</a></br>
+            <a href="../newlandingpage/4"> Example 3</a></br>
+            <a href="../newlandingpage/5"> Example 4</a></br>
+
+        </div>
+    </div>
+
+</div>

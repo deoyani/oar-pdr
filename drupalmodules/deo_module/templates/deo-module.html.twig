@@ -1,0 +1,118 @@
+
+{#{{ attach_library('deo_module/deo-module-lib') }}#}
+
+{#Title Section#}
+<div class="row">
+         <h1>{{ record_title }}</h1>
+</div>
+<br><br>
+
+{#Author and Download Section#}
+<div class="row">
+    {#Author#}
+    <div class="col-md-4">
+        <h3> Contact Person</h3>
+            <address>
+                <strong>{{ record_contact }}</strong><br>
+                {{ addressline1 }} <br>
+                {{ addressline2 }} <br>
+                {{ addressline3 }} <br>
+                <a href="mailto:#">{{ record_contactmail }}</a>
+            </address>
+
+        <h3>DOI </h3>
+            <strong>Publisher Name: </strong>{{ record_publishername }}<br/>
+            <strong>Data Described in </strong>doi: {{ record_doi }}
+
+    </div>
+    <div class="col-md-4">
+    </div>
+    {#Download Section#}
+    <div class="col-md-4">
+        <div class="panel panel-default">
+            <div class="panel-heading">Data Download Links
+
+
+            </div>
+            <div class="panel-body">
+                <p>
+                    {{ record_link }}
+                        {% for key, value in record_link  %}
+                            <a href="{{ vale.downloadURL }}">
+                                {% if value.title is empty %}
+                                    Download Data {{ key+1 }}
+                                {% endif %}
+
+                                {{ value.title}}</a><br>
+                        {% endfor %}
+                        <button type="button" class="pull-right">Add All to Cart</button>
+
+                    {% if record_link is empty%}
+                        There is no data link available.
+                    {% endif %}
+            </div>
+        </div>
+        <div>
+            <div class="col-md-6">
+                <img src="{{ record_image }}" class="img-responsive" alt="record image"/>
+            </div>
+            <div class="col-md-6">
+               This is a test information for this image.
+            </div>
+        </div>
+    </div>
+</div>
+
+{#Abstract or Description Block#}
+<div class="row">
+    <h3>Abstract</h3>
+    <div class="well">
+        {{ record_description }}
+    </div>
+</div>
+
+{#Keywords#}
+<div class="row">
+    <h3>Subject Keywords</h3>
+    <div class="well">
+        {{ record_keywords }}
+        {% for key, value in record_keywords  %}
+            <button type="button" class="btn btn-default btn-xs">{{ value }}</button>
+        {% endfor %}
+        {#<ol>#}
+            {#{% for key, value in record_keywords  %}#}
+                {#<li>{{ value }}</li>#}
+            {#{% endfor %}#}
+        {#</ol>#}
+    </div>
+</div>
+
+{#Optional Links Block#}
+<div class="row">
+    <div class="row">
+        <div class="col-md-3"><a href="{{ record_summary }}">summary</a></div>
+        <div class="col-md-3"><a href="{{ record_landingpage }}">landingpage</a></div>
+        <div class="col-md-3"><a href="{{ record_files }}">files</a></div>
+        <div class="col-md-3"><a href="../landinghistory/{{ record_id }}">history</a></div>
+    </div>
+</div>
+<br/>
+
+{#User editable block#}
+<div class="row">
+
+    <div class="panel panel-default">
+        <div class="panel-heading">
+            <h3>Additional Information</h3>
+        </div>
+        <div class="panel-body">
+
+            {{ record_extrainfo }}
+
+            <img src="{{ record_extraimage }}" class="img-responsive img-rounded" alt="User added image"/>
+
+        </div>
+    </div>
+
+</div>
+

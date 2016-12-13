@@ -1,0 +1,24 @@
+deon.content2:
+  path: /landinghistory/{count}
+  defaults:
+    _controller: '\Drupal\deo_module\Controller\DeoTesthistoryController::content'
+    _title: 'Deo Module History'
+  requirements:
+    _permission: 'access content'
+
+deo.contentlist:
+  path: /landinglist
+  defaults:
+    _controller: '\Drupal\deo_module\Controller\DeoTestListController::content'
+    _title: 'Deo Module List'
+  requirements:
+    _permission: 'access content'
+
+deo.content:
+  path: /landingpage/{count}
+  defaults:
+    _controller: '\Drupal\deo_module\Controller\DeoTestController::content'
+    _title: 'Deo Module'
+  requirements:
+    _permission: 'access content'
+

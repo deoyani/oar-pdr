@@ -1,0 +1,9 @@
+deo-module-lib:
+  version: 1.0
+  css:
+    theme:
+      css/bootstrap.css: {}
+  js:
+    js/bootstrap.js: {}
+  dependencies:
+    - core/jquery
