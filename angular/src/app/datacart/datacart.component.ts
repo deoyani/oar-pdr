@@ -76,7 +76,7 @@ export class DatacartComponent implements OnInit, OnDestroy {
   selectedFileCount: number = 0;
   selectedParentIndex:number = 0;
 
-  private distApi : string = environment.DISTAPI;
+ private distApi : string = "";//environment.DISTAPI;
   //private distApi:string = "http://localhost:8083/oar-dist-service";
 
 

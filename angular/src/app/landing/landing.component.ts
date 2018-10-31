@@ -6,7 +6,7 @@ import { MenuItem } from 'primeng/api';
 import * as _ from 'lodash';
 import 'rxjs/add/operator/map';
 import { Subscription } from 'rxjs/Subscription';
-import { AppConfig } from '../shared/config-service/config.service';
+import { AppConfig, Config } from '../shared/config-service/config.service';
 import {  PLATFORM_ID, APP_ID, Inject } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 
@@ -120,15 +120,10 @@ export class LandingComponent implements OnInit {
    *
    */
   constructor(private route: ActivatedRoute, private el: ElementRef, 
-              private titleService: Title, private appConfig : AppConfig, private router: Router
+              private titleService: Title, private appConfig : AppConfig, 
+              private router: Router
               ,@Inject(PLATFORM_ID) private platformId: Object,
-              @Inject(APP_ID) private appId: string) {
-    
-    this.rmmApi = this.appConfig.getRMMapi();
-    this.distApi = this.appConfig.getDistApi();
-    this.landing = this.appConfig.getLandingBackend();
-    this.pdrApi = this.appConfig.getPDRApi();
-  }
+              @Inject(APP_ID) private appId: string) { }
 
    /**
    * If Search is successful populate list of keywords themes and authors
@@ -191,9 +186,9 @@ createMenuItem(label :string, icon:string, command: any, url : string ){
  */
 updateMenu(){
       
-  this.serviceApi = this.landing+"records?@id="+this.record['@id']; 
-  if(!_.includes(this.landing, "rmm"))
-    this.serviceApi = this.landing+this.record['ediid'];
+  this.serviceApi = this.pmConfig.LANDING +"records?@id="+this.record['@id']; 
+  if(!_.includes(this.pmConfig.LANDING, "rmm"))
+    this.serviceApi = this.pmConfig.LANDING+this.record['ediid'];
   this.distdownload = this.distApi+"ds/zip?id="+this.record['@id'];
       
   var itemsMenu: MenuItem[] = [];
@@ -276,23 +271,54 @@ updateMenu(){
       this.citeString += " (Accessed "+ date.getFullYear()+"-"+(date.getMonth()+1)+"-"+date.getDate()+")";
   }
 
+  confCall: any;
+  pmConfig : Config;
+  // async testasync(){  
+  //   this.test = await this.appConfig.loadAppConfig();
+  //   this.pmConfig = this.appConfig.getValue();
+  //   console.log("L TEST 1::"+this.pmConfig.PDRAPI);
+  // }
+
+  async  getdata(){
+    this.confCall = await this.appConfig.loadAppConfig();
+    this.pmConfig = this.appConfig.getConfig();
+    console.log("L TEST 2::"+this.pmConfig.PDRAPI);
+    var newpromise = new Promise((resolve, reject) =>
+    {
+      console.log(" L TEST 3");
+      return this.route.data.map(data => data.searchService)
+      .subscribe(
+        (res)=>{
+          console.log(" here:"+res);
+          console.log(" here:"+JSON.stringify(res));
+          this.onSuccess(res);
+        },
+        error =>{
+          console.log("There is an error in searchservice.");
+          this.onError(" There is an error");
+        }
+      );
+    });
+   return newpromise;
+  }
   /**
    * Get the params OnInit
    */
   ngOnInit() {
   
     this.searchValue = this.route.snapshot.paramMap.get('id');
-   
     this.files =[];
-      this.route.data.map(data => data.searchService )
-       .subscribe((res)=>{
-         this.onSuccess(res);
-       }, error =>{
-          console.log("There is an error in searchservice.");
-          this.onError(" There is an error");
-          // throw new ErrorComponent(this.route);
-       });
+    var temp = this.getdata();
+      // this.route.data.map(data => data.searchService )
+      //  .subscribe((res)=>{
+      //    this.onSuccess(res);
+      //  }, error =>{
+      //     console.log("There is an error in searchservice.");
+      //     this.onError(" There is an error");
+      //     // throw new ErrorComponent(this.route);
+      //  });
   }
+
   goToSelection(isMetadata: boolean, isSimilarResources: boolean, sectionId : string){
     this.metadata = isMetadata; this.similarResources =isSimilarResources;
      if(window.location.href.includes("ark"))

@@ -11,22 +11,14 @@ import * as _ from 'lodash';
  */
 @Injectable()
 export class SearchService {
-  
-  private rmmApi : string = ""; 
-  private metaApi : string = "";
-  private landingBackend : string = "";
-  private serviceApi : string = "";
+ 
 
   /**
    * Creates a new SearchService with the injected Http.
    * @param {Http} http - The injected Http.
    * @constructor
    */
-  constructor(private http: HttpClient, private appConfig : AppConfig) {
-    this.rmmApi = this.appConfig.getRMMapi();
-    this.metaApi = this.appConfig.getMetaApi();
-    this.landingBackend = this.appConfig.getLandingBackend();
-    this.serviceApi = this.rmmApi;
+  constructor(private http: HttpClient, private confService : AppConfig) {
   }
 
   searchSample(){
@@ -36,19 +28,35 @@ export class SearchService {
      })
   }
 
-  testdata(): Observable<any> {
-    //"http://localhost:4200/assets/sampledata.json"
-    console.log("Test service here:"+this.serviceApi);
-    return this.http.get(this.serviceApi);
-  } 
-  searchById(searchValue:string){
- 
-    if (_.includes(this.landingBackend,'rmm') && _.includes(searchValue,'ark'))
-      this.landingBackend = this.landingBackend+'records?@id=';
-    else if(_.includes(this.landingBackend,'rmm'))
-      this.landingBackend = this.landingBackend+'records/'; 
-    return this.http.get(this.landingBackend+ searchValue);
+
+ async  searchById(searchValue:string){
+      var temp1 = await this.testasync();
+      var temp =  this.confService.getConfig().LANDING;
+      if (_.includes(temp,'rmm') && _.includes(searchValue,'ark'))
+        temp = temp+'records?@id=';
+      else if(_.includes(temp,'rmm'))
+        temp = temp+'records/'; 
+
+      var newpromise = new Promise((resolve, reject) =>
+      {
+        return this.http.get(temp+ searchValue)
+        .toPromise()
+        .then(
+           res => { // Success
+           //setTimeout(() => resolve(res), 3000);
+           resolve(res);
+          },
+           msg => { // Error
+           reject(msg);
+          }
+        ); 
+      });
+     return newpromise;
+
   }
+ async testasync(){
+   var confCall = await this.confService.loadAppConfig();
+ }
 }
 
 

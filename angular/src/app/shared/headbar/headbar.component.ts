@@ -1,7 +1,7 @@
 import { CartService } from '../../datacart/cart.service';
 import { CartEntity } from '../../datacart/cart.entity';
-import { Component, ElementRef } from '@angular/core';
-import { AppConfig } from '../config-service/config.service';
+import { Component, ElementRef, OnInit } from '@angular/core';
+import { AppConfig,Config } from '../config-service/config.service';
 
 /**
  * This class represents the headbar component.
@@ -15,7 +15,7 @@ declare var Ultima: any;
   styleUrls: ['headbar.component.css']
 })
 
-export class HeadbarComponent {
+export class HeadbarComponent implements OnInit{
 
   layoutCompact: boolean = true;
   layoutMode: string = 'horizontal';
@@ -27,15 +27,23 @@ export class HeadbarComponent {
   cartEntities: CartEntity[];
   loginuser = false;
   cartLength : number;
+  test: any;
+  pmConfig : Config;
 
   constructor( private el: ElementRef,  private cartService: CartService, private appConfig : AppConfig) {
-    this.SDPAPI = this.appConfig.getSDPApi();
-    this.landingService = this.appConfig.getLandingBackend();
+    
       this.cartService.watchStorage().subscribe(value => {
           this.cartLength = value;
       });
   }
-  
+  async  getdata(){
+    this.test = await this.appConfig.loadAppConfig();
+    this.pmConfig = this.appConfig.getConfig();
+    this.SDPAPI = this.pmConfig.SDPAPI;
+  }
+  ngOnInit(){
+    var temp = this.getdata();
+  }
   checkinternal() {
     if(!this.landingService.includes('rmm'))
       this.internalBadge = true;
