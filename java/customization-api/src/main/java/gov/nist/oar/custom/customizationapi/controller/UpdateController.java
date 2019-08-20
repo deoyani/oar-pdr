@@ -39,6 +39,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.client.RestClientException;
 
 import gov.nist.oar.custom.customizationapi.exceptions.CustomizationException;
 import gov.nist.oar.custom.customizationapi.exceptions.ErrorInfo;
@@ -46,15 +47,10 @@ import gov.nist.oar.custom.customizationapi.repositories.UpdateRepository;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 
-/**
- * Controller to update 
- * @author  Deoyani Nandrekar-Heinis
- *
- */
 @RestController
 @Api(value = "Api endpoints to access editable data, update changes to data, save in the backend", tags = "Customization API")
 @Validated
-@RequestMapping("/api/")
+@RequestMapping("/api")
 public class UpdateController {
     private Logger logger = LoggerFactory.getLogger(UpdateController.class);
 
@@ -63,19 +59,21 @@ public class UpdateController {
 
     @Autowired
     private UpdateRepository uRepo;
-
+    
+ 
     @RequestMapping(value = {
-	    "update/{ediid}" }, method = RequestMethod.POST)
+	    "update/{ediid}" }, method = RequestMethod.POST, headers = "accept=application/json", produces = "application/json")
     @ApiOperation(value = ".", nickname = "Cache Record Changes", notes = "Resource returns a record if it is editable and user is authenticated.")
     public Document updateRecord(@PathVariable @Valid String ediid,
 	    @Valid @RequestBody String params)  throws CustomizationException {
+
 	logger.info("Update the given record: "+ ediid);
 	return uRepo.update(params, ediid);
 	
     }
 
     @RequestMapping(value = {
-	    "save/{ediid}" }, method = RequestMethod.POST)
+	    "save/{ediid}" }, method = RequestMethod.POST, headers = "accept=application/json", produces = "application/json")
     @ApiOperation(value = ".", nickname = "Save changes to server", notes = "Resource returns a boolean based on success or failure of the request.")
     public Document saveRecord(@PathVariable @Valid String ediid,  @Valid @RequestBody String params) throws CustomizationException {
 	logger.info("Send updated record to mdserver:"+ediid);
@@ -113,9 +111,9 @@ public class UpdateController {
     }
 
     @RequestMapping(value = {
-	    "edit/{ediid}" }, method = RequestMethod.GET)
+	    "edit/{ediid}" }, method = RequestMethod.GET, produces = "application/json")
     @ApiOperation(value = ".", nickname = "Access editable Record", notes = "Resource returns a record if it is editable and user is authenticated.")
-    public Document editRecord(@PathVariable @Valid String ediid) {
+    public Document editRecord(@PathVariable @Valid String ediid) throws CustomizationException {
 	logger.info("Access the record to be edited by ediid "+ediid);
 	return uRepo.edit(ediid);
     }
@@ -133,5 +131,12 @@ public class UpdateController {
     public ErrorInfo handleStreamingError(RuntimeException ex, HttpServletRequest req) {
 	logger.error("Unexpected failure during request: " + req.getRequestURI() + "\n  " + ex.getMessage(), ex);
 	return new ErrorInfo(req.getRequestURI(), 500, "Unexpected Server Error");
+    }
+    
+    @ExceptionHandler(RestClientException.class)
+    @ResponseStatus(HttpStatus.BAD_GATEWAY)
+    public ErrorInfo handleRestClientError(RuntimeException ex, HttpServletRequest req) {
+	logger.error("Unexpected failure during request: " + req.getRequestURI() + "\n  " + ex.getMessage(), ex);
+	return new ErrorInfo(req.getRequestURI(), 502, "Can not connect to backend server");
     }
 }

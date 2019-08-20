@@ -55,19 +55,21 @@ public class MongoConfig {
     List servers = new ArrayList();
     List credentials = new ArrayList();
 
-    @Value("${dbcollections.records}")
+    @Value("${oar.mdserver:testserver}")
+    private String mdserver;
+    @Value("${oar.dbcollections.records: records}")
     private String record;
-    @Value("${dbcollections.changes}")
+    @Value("${oar.dbcollections.changes: changes}")
     private String changes;
-    @Value("${oar.mongodb.port}")
+    @Value("${oar.mongodb.port:3333}")
     private int port;
-    @Value("${oar.mongodb.host}")
+    @Value("${oar.mongodb.host:localhost}")
     private String host;
-    @Value("${oar.mongodb.database.name}")
-    private String dbname;
-    @Value("${oar.mongodb.readwrite.user}")
+    @Value("${oar.mongodb.database.name:UpdateDB}")
+    private String dbname ;
+    @Value("${oar.mongodb.readwrite.user:testuser}")
     private String user;
-    @Value("${oar.mongodb.readwrite.password}")
+    @Value("${oar.mongodb.readwrite.password:testpassword}")
     private String password;
 
     @PostConstruct

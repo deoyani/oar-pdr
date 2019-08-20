@@ -7,7 +7,7 @@ server.max-http-header-size=8192
 server.tomcat.accesslog.directory=logs
 server.tomcat.accesslog.enabled=false
 
-
+spring.cloud.config.uri=http://localhost:8083
 
 #this is for https locally
 server.ssl.key-store=keystore.p12
@@ -35,7 +35,7 @@ oar.mdserver=https://data.nist.gov/rmm/records/
 #auth
 auth.federation.metadata=/federationmetadata.xml
 saml.scheme=https
-saml.server.name=localhost
+saml.server.name=pn110559.nist.gov
 saml.server.context-path=/saml-sp
 
 #saml related 
@@ -45,7 +45,7 @@ saml.keystore.key=mykeyalias
 saml.keystore.keypass=mykeypass
 
 saml.metdata.entityid=com:deoyani:spring:sp
-saml.metadata.entitybaseUrl=https://localhost/saml-sp
+saml.metadata.entitybaseUrl=https://pn110559.nist.gov/saml-sp
 
 #cross origin 
 cross.origin.urls=http://localhost:4200
