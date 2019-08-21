@@ -36,7 +36,6 @@ import com.mongodb.client.MongoDatabase;
 @Configuration
 @ConfigurationProperties
 @EnableAutoConfiguration
-
 /**
  * MongoDB configuration, reading all the conf details from application.yml
  * 
@@ -56,7 +55,6 @@ public class MongoConfig {
     List servers = new ArrayList();
     List credentials = new ArrayList();
 
-
     @Value("${oar.mdserver:testserver}")
     private String mdserver;
     @Value("${oar.dbcollections.records: records}")
@@ -73,11 +71,12 @@ public class MongoConfig {
     private String user;
     @Value("${oar.mongodb.readwrite.password:testpassword}")
     private String password;
+
     @PostConstruct
     public void initIt() throws Exception {
 
 	mongoClient = (MongoClient) this.mongo();
-	log.info("########## " + dbname + " ########"+mdserver);
+	log.info("########## " + dbname + " ########");
 
 	this.setMongodb(this.dbname);
 	this.setRecordCollection(this.record);

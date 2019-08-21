@@ -8,9 +8,9 @@ spring:
       uri: http://localhost:8084
        
 server:
-    port: 8085
+    port: 443
     servlet:
-      context-path:  /customization
+      context-path:  /saml-sp
     error:
       include-stacktrace: never
     connection-timeout: 300000
@@ -19,8 +19,9 @@ server:
       accesslog:
         directory: logs
         enabled: false
-             
+      
 logging:
   file: customization.log
   path : /tmp/customization-api
   exception-conversion-word: '%wEx'
+  

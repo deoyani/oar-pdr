@@ -36,8 +36,7 @@ public class UpdateRepositoryService implements UpdateRepository {
     private Logger logger = LoggerFactory.getLogger(UpdateRepositoryService.class);
     @Autowired
     MongoConfig mconfig;
-   
-    @Value("${oar.mdserver:}")
+    @Value("${oar.mdserver}")
     private String mdserver;
 
     MongoCollection<Document> recordCollection;

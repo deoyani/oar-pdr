@@ -16,7 +16,7 @@ import java.io.IOException;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.validation.Valid;
-import org.springframework.web.client.RestClientException;
+
 //import org.apache.http.HttpEntity;
 //import org.apache.http.HttpResponse;
 //import org.apache.http.NameValuePair;
@@ -30,7 +30,6 @@ import org.bson.Document;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -40,6 +39,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.client.RestClientException;
 
 import gov.nist.oar.custom.customizationapi.exceptions.CustomizationException;
 import gov.nist.oar.custom.customizationapi.exceptions.ErrorInfo;
@@ -47,15 +47,10 @@ import gov.nist.oar.custom.customizationapi.repositories.UpdateRepository;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 
-/**
- * Controller to update 
- * @author  Deoyani Nandrekar-Heinis
- *
- */
 @RestController
 @Api(value = "Api endpoints to access editable data, update changes to data, save in the backend", tags = "Customization API")
 @Validated
-@RequestMapping("/")
+@RequestMapping("/api")
 public class UpdateController {
     private Logger logger = LoggerFactory.getLogger(UpdateController.class);
 
