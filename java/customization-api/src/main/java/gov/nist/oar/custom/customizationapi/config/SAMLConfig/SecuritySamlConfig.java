@@ -15,6 +15,7 @@ import org.opensaml.xml.parse.StaticBasicParserPool;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.beans.factory.config.MethodInvokingFactoryBean;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
@@ -87,6 +88,34 @@ import javax.servlet.http.HttpServletRequest;
 @Configuration
 public class SecuritySamlConfig extends WebSecurityConfigurerAdapter {
 
+    @Value("${saml.metdata.entityid:testid}")
+    String entityId;
+    
+    @Value("${saml.metadata.entitybaseUrl:testurl}")
+    String entityBaseURL;
+    
+    @Value("${saml.keystore.path:testpath}")
+    String keyPath;
+    
+    @Value("${saml.keystroe.storepass:testpass}")
+    String keystorePass;
+    
+    @Value("${saml.keystore.key:testkey}")
+    String keyAlias;
+    
+    @Value("${saml.keystore.keypass:keypass}")
+    String keyPass;
+    
+    
+    @Value("${auth.federation.metadata:fedmetadata}")
+    String federationMetadata;
+    @Value("${saml.scheme:samlscheme}")
+    String samlScheme;
+    @Value("${saml.server.name:keypass}")
+    String samlServer;
+    @Value("${saml.server.context-path:keypass}")
+    String samlContext;
+    
     @Bean
     public WebSSOProfileOptions defaultWebSSOProfileOptions() {
 	WebSSOProfileOptions webSSOProfileOptions = new WebSSOProfileOptions();
@@ -160,8 +189,8 @@ public class SecuritySamlConfig extends WebSecurityConfigurerAdapter {
     @Bean
     public MetadataGenerator metadataGenerator() {
 	MetadataGenerator metadataGenerator = new MetadataGenerator();
-	metadataGenerator.setEntityId("com:deoyani:spring:sp");
-	metadataGenerator.setEntityBaseURL("https://pn110559.nist.gov/saml-sp");
+	metadataGenerator.setEntityId(entityId);
+	metadataGenerator.setEntityBaseURL(entityBaseURL);
 	metadataGenerator.setExtendedMetadata(extendedMetadata());
 	metadataGenerator.setIncludeDiscoveryExtension(false);
 	metadataGenerator.setKeyManager(keyManager());
@@ -170,11 +199,11 @@ public class SecuritySamlConfig extends WebSecurityConfigurerAdapter {
 
     @Bean
     public KeyManager keyManager() {
-	ClassPathResource storeFile = new ClassPathResource("/saml-keystore.jks");
-	String storePass = "samlstorepass";
+	ClassPathResource storeFile = new ClassPathResource(keyPath);
+	String storePass = keystorePass;
 	Map<String, String> passwords = new HashMap<>();
-	passwords.put("mykeyalias", "mykeypass");
-	return new JKSKeyManager(storeFile, storePass, passwords, "mykeyalias");
+	passwords.put(keyAlias, keyPass);
+	return new JKSKeyManager(storeFile, storePass, passwords, keyAlias);
     }
 
     @Bean
@@ -286,11 +315,11 @@ public class SecuritySamlConfig extends WebSecurityConfigurerAdapter {
     @Bean
     public SAMLContextProviderImpl contextProvider() {
 	SAMLContextProviderLB samlContextProviderLB = new SAMLContextProviderLB();
-	samlContextProviderLB.setScheme("https");
-	samlContextProviderLB.setServerName("pn110559.nist.gov");
+	samlContextProviderLB.setScheme(samlScheme);
+	samlContextProviderLB.setServerName(samlServer);
 	samlContextProviderLB.setServerPort(443);
 	samlContextProviderLB.setIncludeServerPortInRequestURL(true);
-	samlContextProviderLB.setContextPath("/saml-sp");
+	samlContextProviderLB.setContextPath(samlContext);
 	samlContextProviderLB.setStorageFactory(new org.springframework.security.saml.storage.EmptyStorageFactory());
 	return samlContextProviderLB;
     }
@@ -331,20 +360,20 @@ public class SecuritySamlConfig extends WebSecurityConfigurerAdapter {
 
 	Timer backgroundTaskTimer = new Timer(true);
 
-	ResourceBackedMetadataProvider resourceBackedMetadataProvider = new ResourceBackedMetadataProvider(
-		backgroundTaskTimer, new ClasspathResource("/saml-idp-metadata.xml"));
+//	ResourceBackedMetadataProvider resourceBackedMetadataProvider = new ResourceBackedMetadataProvider(
+//		backgroundTaskTimer, new ClasspathResource("federationMetadata"));
 
-//        String idpSSOCircleMetadataURL = "https://sts.nist.gov/federationmetadata/2007-06/federationmetadata.xml";
-//	HTTPMetadataProvider httpMetadataProvider = new HTTPMetadataProvider(
-//			this.backgroundTaskTimer, httpClient(), idpSSOCircleMetadataURL);
-//	httpMetadataProvider.setParserPool(parserPool());
+        String fedMetadataURL = "https://sts.nist.gov/federationmetadata/2007-06/federationmetadata.xml";
+	HTTPMetadataProvider httpMetadataProvider = new HTTPMetadataProvider(
+			backgroundTaskTimer, httpClient(), fedMetadataURL);
+	httpMetadataProvider.setParserPool(parserPool());
 
-	resourceBackedMetadataProvider.setParserPool(parserPool());
-
-	ExtendedMetadataDelegate extendedMetadataDelegate = new ExtendedMetadataDelegate(resourceBackedMetadataProvider,
-		extendedMetadata());
-//        ExtendedMetadataDelegate extendedMetadataDelegate =
-//                new ExtendedMetadataDelegate(httpMetadataProvider , extendedMetadata());
+//	resourceBackedMetadataProvider.setParserPool(parserPool());
+//
+//	ExtendedMetadataDelegate extendedMetadataDelegate = new ExtendedMetadataDelegate(resourceBackedMetadataProvider,
+//		extendedMetadata());
+        ExtendedMetadataDelegate extendedMetadataDelegate =
+                new ExtendedMetadataDelegate(httpMetadataProvider , extendedMetadata());
 
 	//// **** just set this to false to solve the issue signature trust
 	//// establishment
@@ -404,4 +433,17 @@ public class SecuritySamlConfig extends WebSecurityConfigurerAdapter {
 	return filter;
     }
 
+//  private Timer backgroundTaskTimer;
+//	private MultiThreadedHttpConnectionManager multiThreadedHttpConnectionManager;
+//
+//	public void init() {
+//		this.backgroundTaskTimer = new Timer(true);
+//		this.multiThreadedHttpConnectionManager = new MultiThreadedHttpConnectionManager();
+//	}
+//
+//	public void shutdown() {
+//		this.backgroundTaskTimer.purge();
+//		this.backgroundTaskTimer.cancel();
+//		this.multiThreadedHttpConnectionManager.shutdown();
+//	}
 }

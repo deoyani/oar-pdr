@@ -43,7 +43,9 @@ import org.springframework.web.client.RestClientException;
 
 import gov.nist.oar.custom.customizationapi.exceptions.CustomizationException;
 import gov.nist.oar.custom.customizationapi.exceptions.ErrorInfo;
+import gov.nist.oar.custom.customizationapi.exceptions.InvalidInputException;
 import gov.nist.oar.custom.customizationapi.repositories.UpdateRepository;
+import gov.nist.oar.custom.customizationapi.service.ResourceNotFoundException;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 
@@ -59,65 +61,86 @@ public class UpdateController {
 
     @Autowired
     private UpdateRepository uRepo;
-    
- 
+
+    /**
+     * Update the fields of record metadata. 
+     * @param ediid unique record id
+     * @param params subset of metadata modified in JSON format
+     * @return Updated record in JSON format
+     * @throws CustomizationException
+     * @throws InvalidInputException 
+     */
     @RequestMapping(value = {
-	    "update/{ediid}" }, method = RequestMethod.POST, headers = "accept=application/json", produces = "application/json")
+	    "draft/{ediid}" }, method = RequestMethod.PATCH, headers = "accept=application/json", produces = "application/json")
     @ApiOperation(value = ".", nickname = "Cache Record Changes", notes = "Resource returns a record if it is editable and user is authenticated.")
-    public Document updateRecord(@PathVariable @Valid String ediid,
-	    @Valid @RequestBody String params)  throws CustomizationException {
+    public Document updateRecord(@PathVariable @Valid String ediid, @Valid @RequestBody String params)
+	    throws CustomizationException, InvalidInputException {
 
-	logger.info("Update the given record: "+ ediid);
+	logger.info("Update the given record: " + ediid);
 	return uRepo.update(params, ediid);
-	
+
     }
 
-    @RequestMapping(value = {
-	    "save/{ediid}" }, method = RequestMethod.POST, headers = "accept=application/json", produces = "application/json")
-    @ApiOperation(value = ".", nickname = "Save changes to server", notes = "Resource returns a boolean based on success or failure of the request.")
-    public Document saveRecord(@PathVariable @Valid String ediid,  @Valid @RequestBody String params) throws CustomizationException {
-	logger.info("Send updated record to mdserver:"+ediid);
-	return uRepo.save(ediid, params);
-//	RestTemplate restTemplate = new RestTemplate();
-//	HttpHeaders headers = new HttpHeaders();
-//	headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
-//
-//	MultiValueMap<String, String> map= new LinkedMultiValueMap<String, String>();
-//	map.add("email", "first.last@example.com");
-//
-//	HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<MultiValueMap<String, String>>(map, headers);
-//
-//	ResponseEntity<String> response = restTemplate.postForEntity( "", request , String.class );
-	
-//	HttpClient httpclient = HttpClients.createDefault();
-//	HttpPost httppost = new HttpPost("server");
-//
-//	// Request parameters and other properties.
-//	List<NameValuePair> params = new ArrayList<NameValuePair>(2);
-//	params.add(new BasicNameValuePair("Authorization", "12345"));
-//	params.add(new BasicNameValuePair("Content-type", "application/json"));
-//	httppost.setEntity(new UrlEncodedFormEntity(params, "UTF-8"));
-//
-//	//Execute and get the response.
-//	HttpResponse response = httpclient.execute(httppost);
-//	HttpEntity entity = response.getEntity();
-//
-//	if (entity != null) {
-//	    try (InputStream instream = entity.getContent()) {
-//	        // do something useful
-//	    }
-//	}
-	
-    }
-
-    @RequestMapping(value = {
-	    "edit/{ediid}" }, method = RequestMethod.GET, produces = "application/json")
+    /***
+     * Access the record from service
+     * @param ediid Unique  record identifier
+     * @return
+     * @throws CustomizationException
+     */
+    @RequestMapping(value = { "draft/{ediid}" }, method = RequestMethod.GET, produces = "application/json")
     @ApiOperation(value = ".", nickname = "Access editable Record", notes = "Resource returns a record if it is editable and user is authenticated.")
     public Document editRecord(@PathVariable @Valid String ediid) throws CustomizationException {
-	logger.info("Access the record to be edited by ediid "+ediid);
+	logger.info("Access the record to be edited by ediid " + ediid);
 	return uRepo.edit(ediid);
     }
+
+    /**
+     * Delete the resource from staging area
+     * @param ediid Unique  record identifier
+     * @return JSON document original format
+     * @throws CustomizationException
+     */
+    @RequestMapping(value = { "draft/{ediid}" }, method = RequestMethod.DELETE, produces = "application/json")
+    @ApiOperation(value = ".", nickname = "Delete the Record from drafts", notes = "This will allow user to delete all the changes made in the record in draft mode, original published record will remain as it is.")
+    public boolean deleteRecord(@PathVariable @Valid String ediid) throws CustomizationException {
+	logger.info("Delete the record from stagging given by ediid " + ediid);
+	return uRepo.delete(ediid);
+    }
     
+    /**
+     * Finalize changes made in the record and send it back to bakend metadata server to merge and 
+     * send for review.
+     * @param ediid Unique record id
+     * @param params Modified fields in JSON 
+     * @return Updated JSON record
+     * @throws CustomizationException
+     * @throws InvalidInputException 
+     */
+    @RequestMapping(value = {
+	    "savedrecord/{ediid}" }, method = RequestMethod.PUT, headers = "accept=application/json", produces = "application/json")
+    @ApiOperation(value = ".", nickname = "Save changes to server", notes = "Resource returns a boolean based on success or failure of the request.")
+    public Document saveRecord(@PathVariable @Valid String ediid, @Valid @RequestBody String params)
+	    throws CustomizationException, InvalidInputException,ResourceNotFoundException {
+	logger.info("Send updated record to backend metadata server:" + ediid);
+	return uRepo.save(ediid, params);
+
+
+    }
+    
+    @ExceptionHandler(ResourceNotFoundException.class)
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    public ErrorInfo handleStreamingError(ResourceNotFoundException ex, HttpServletRequest req) {
+	logger.info("There is an error accessing requested record : " + req.getRequestURI() + "\n  " + ex.getMessage());
+	return new ErrorInfo(req.getRequestURI(), 404, "Resource Not Found", req.getMethod());
+    }
+    
+    @ExceptionHandler(InvalidInputException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ErrorInfo handleStreamingError(InvalidInputException ex, HttpServletRequest req) {
+	logger.info("There is an error processing input data: " + req.getRequestURI() + "\n  " + ex.getMessage());
+	return new ErrorInfo(req.getRequestURI(), 400, "Invalid input error", "PATCH");
+    }
+
     @ExceptionHandler(IOException.class)
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     public ErrorInfo handleStreamingError(CustomizationException ex, HttpServletRequest req) {
@@ -132,7 +155,7 @@ public class UpdateController {
 	logger.error("Unexpected failure during request: " + req.getRequestURI() + "\n  " + ex.getMessage(), ex);
 	return new ErrorInfo(req.getRequestURI(), 500, "Unexpected Server Error");
     }
-    
+
     @ExceptionHandler(RestClientException.class)
     @ResponseStatus(HttpStatus.BAD_GATEWAY)
     public ErrorInfo handleRestClientError(RuntimeException ex, HttpServletRequest req) {
