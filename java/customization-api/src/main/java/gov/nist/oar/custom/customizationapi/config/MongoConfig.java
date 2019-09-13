@@ -37,7 +37,7 @@ import com.mongodb.client.MongoDatabase;
 @ConfigurationProperties
 @EnableAutoConfiguration
 /**
- * MongoDB configuration, reading all the conf details from application.yml
+ * MongoDB configuration, reading all the server details from config server.
  * 
  * @author Deoyani Nandrekar-Heinis
  *
@@ -140,6 +140,10 @@ public class MongoConfig {
 	changesCollection = mongoDb.getCollection(change);
     }
     
+    /**
+     * Get Metadata service URL
+     * @return
+     */
     public String getMetadataServer() {
 	return this.metadataServerUrl;
     }
@@ -148,6 +152,10 @@ public class MongoConfig {
 	this.metadataServerUrl = mserver;
     }
 
+    /**
+     * Get Metadata service secret to communicate with API
+     * @return
+     */
     public String getMDSecret() {
 	return this.mdserversecret;
     }

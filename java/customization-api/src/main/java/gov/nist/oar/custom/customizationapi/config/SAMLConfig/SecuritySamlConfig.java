@@ -90,44 +90,49 @@ public class SecuritySamlConfig extends WebSecurityConfigurerAdapter {
 
     @Value("${saml.metdata.entityid:testid}")
     String entityId;
-    
+
     @Value("${saml.metadata.entitybaseUrl:testurl}")
     String entityBaseURL;
-    
+
     @Value("${saml.keystore.path:testpath}")
     String keyPath;
-    
+
     @Value("${saml.keystroe.storepass:testpass}")
     String keystorePass;
-    
+
     @Value("${saml.keystore.key:testkey}")
     String keyAlias;
-    
+
     @Value("${saml.keystore.keypass:keypass}")
     String keyPass;
-    
-    
+
     @Value("${auth.federation.metadata:fedmetadata}")
     String federationMetadata;
+    
     @Value("${saml.scheme:samlscheme}")
     String samlScheme;
+    
     @Value("${saml.server.name:keypass}")
     String samlServer;
+    
     @Value("${saml.server.context-path:keypass}")
     String samlContext;
-    
+
+    @Value("${application.url:http://localhost:4200}")
+    String applicationUrl;
+
     @Bean
     public WebSSOProfileOptions defaultWebSSOProfileOptions() {
 	WebSSOProfileOptions webSSOProfileOptions = new WebSSOProfileOptions();
 	webSSOProfileOptions.setIncludeScoping(false);
 	// Relay state can also be set here
-	// webSSOProfileOptions.setRelayState("https://data.nist.gov/sdp");
+//	webSSOProfileOptions.setRelayState("https://data.nist.gov/sdp");
 	return webSSOProfileOptions;
     }
 
     @Bean
     public SAMLEntryPoint samlEntryPoint() {
-	SAMLEntryPoint samlEntryPoint = new SamlWithRelayStateEntryPoint();
+	SAMLEntryPoint samlEntryPoint = new SamlWithRelayStateEntryPoint(applicationUrl);
 	samlEntryPoint.setDefaultProfileOptions(defaultWebSSOProfileOptions());
 	return samlEntryPoint;
     }
@@ -360,20 +365,20 @@ public class SecuritySamlConfig extends WebSecurityConfigurerAdapter {
 
 	Timer backgroundTaskTimer = new Timer(true);
 
-//	ResourceBackedMetadataProvider resourceBackedMetadataProvider = new ResourceBackedMetadataProvider(
-//		backgroundTaskTimer, new ClasspathResource("federationMetadata"));
+	ResourceBackedMetadataProvider resourceBackedMetadataProvider = new ResourceBackedMetadataProvider(
+		backgroundTaskTimer, new ClasspathResource(federationMetadata));
 
-        String fedMetadataURL = "https://sts.nist.gov/federationmetadata/2007-06/federationmetadata.xml";
-	HTTPMetadataProvider httpMetadataProvider = new HTTPMetadataProvider(
-			backgroundTaskTimer, httpClient(), fedMetadataURL);
-	httpMetadataProvider.setParserPool(parserPool());
+//        String fedMetadataURL = "https://sts.nist.gov/federationmetadata/2007-06/federationmetadata.xml";
+//	HTTPMetadataProvider httpMetadataProvider = new HTTPMetadataProvider(
+//			backgroundTaskTimer, httpClient(), fedMetadataURL);
+//	httpMetadataProvider.setParserPool(parserPool());
 
-//	resourceBackedMetadataProvider.setParserPool(parserPool());
-//
-//	ExtendedMetadataDelegate extendedMetadataDelegate = new ExtendedMetadataDelegate(resourceBackedMetadataProvider,
-//		extendedMetadata());
-        ExtendedMetadataDelegate extendedMetadataDelegate =
-                new ExtendedMetadataDelegate(httpMetadataProvider , extendedMetadata());
+	resourceBackedMetadataProvider.setParserPool(parserPool());
+
+	ExtendedMetadataDelegate extendedMetadataDelegate = new ExtendedMetadataDelegate(resourceBackedMetadataProvider,
+		extendedMetadata());
+//        ExtendedMetadataDelegate extendedMetadataDelegate =
+//                new ExtendedMetadataDelegate(httpMetadataProvider , extendedMetadata());
 
 	//// **** just set this to false to solve the issue signature trust
 	//// establishment
@@ -429,7 +434,7 @@ public class SecuritySamlConfig extends WebSecurityConfigurerAdapter {
 
     @Bean
     CORSFilter corsFilter() {
-	CORSFilter filter = new CORSFilter();
+	CORSFilter filter = new CORSFilter(applicationUrl);
 	return filter;
     }
 

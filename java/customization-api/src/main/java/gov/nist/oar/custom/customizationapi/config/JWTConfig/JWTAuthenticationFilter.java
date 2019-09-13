@@ -56,6 +56,11 @@ import java.io.IOException;
 //}
 import java.util.Map;
 
+/**
+ * This filter users JWT configuration and filters all the service requests which need authenticated token exchange.
+ * @author Deoyani Nandrekar-Heinis
+ *
+ */
 @Component
 public class JWTAuthenticationFilter implements Filter {
 

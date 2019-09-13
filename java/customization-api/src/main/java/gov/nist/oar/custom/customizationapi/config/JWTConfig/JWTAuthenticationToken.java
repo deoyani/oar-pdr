@@ -10,10 +10,16 @@ import org.springframework.security.core.GrantedAuthority;
 import java.util.Collection;
 
 /**
- * @author 
+ * This class represents authentication object, which is used to generate token.
+ * @author Deoyani Nandrekar-Heinis
  */
 public class JWTAuthenticationToken extends AbstractAuthenticationToken {
 
+    /**
+     * 
+     */
+    private static final long serialVersionUID = -2848934719411152299L;
+   
     private final transient Object principal;
 
     public JWTAuthenticationToken(Object principal) {

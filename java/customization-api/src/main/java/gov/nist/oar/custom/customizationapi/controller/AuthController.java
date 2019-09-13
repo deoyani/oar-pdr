@@ -49,20 +49,19 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * @author 
+ * This controller sends JWT, a token generated after successful authentication.
+ * This token can be used to further communicated with service.
+ * @author  Deoyani Nandrekar-Heinis
  */
 @RestController
-@CrossOrigin("http://localhost:4200")
+//@CrossOrigin("http://localhost:4200")
 @RequestMapping("/auth")
 public class AuthController {
 
     @GetMapping("/token")
     public UserToken token(Authentication authentication) throws JOSEException {
 
-	
         final DateTime dateTime = DateTime.now();
-
-       
         //build claims
 
         JWTClaimsSet.Builder jwtClaimsSetBuilder = new JWTClaimsSet.Builder();

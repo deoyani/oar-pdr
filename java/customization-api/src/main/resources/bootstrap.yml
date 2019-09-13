@@ -7,21 +7,21 @@ spring:
     config:
       uri: http://localhost:8084
        
-server:
-    port: 443
-    servlet:
-      context-path:  /saml-sp
-    error:
-      include-stacktrace: never
-    connection-timeout: 300000
-    max-http-header-size: 8192
-    tomcat:
-      accesslog:
-        directory: logs
-        enabled: false
-      
-logging:
-  file: customization.log
-  path : /tmp/customization-api
-  exception-conversion-word: '%wEx'
-  
+#server:
+#    port: 443
+#    servlet:
+#      context-path:  /customization
+#    error:
+#      include-stacktrace: never
+#    connection-timeout: 300000
+#    max-http-header-size: 8192
+#    tomcat:
+#      accesslog:
+#        directory: logs
+#        enabled: false
+#      
+#logging:
+#  file: customization.log
+#  path : /tmp/customization-api
+#  exception-conversion-word: '%wEx'
+#  

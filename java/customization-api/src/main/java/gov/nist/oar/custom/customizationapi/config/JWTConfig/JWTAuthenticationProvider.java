@@ -19,55 +19,56 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 
 /**
- * @author 
+ * JWTAuthenticationProvider class helps generate JWT, token once the user is
+ * authenticated by SAML identity provider.
+ * 
+ * @author Deoyani Nandrekar-Heinis
  */
 public class JWTAuthenticationProvider implements AuthenticationProvider {
 
     @Override
     public boolean supports(Class<?> authentication) {
-        return JWTAuthenticationProvider.class.isAssignableFrom(authentication);
+	return JWTAuthenticationProvider.class.isAssignableFrom(authentication);
     }
 
     @Override
     public Authentication authenticate(Authentication authentication) {
 
-        Assert.notNull(authentication, "Authentication is missing");
+	Assert.notNull(authentication, "Authentication is missing");
 
-        Assert.isInstanceOf(JWTAuthenticationProvider.class, authentication,
-                "This method only accepts JwtAuthenticationToken");
+	Assert.isInstanceOf(JWTAuthenticationProvider.class, authentication,
+		"This method only accepts JwtAuthenticationToken");
 
-        String jwtToken = authentication.getName();
+	String jwtToken = authentication.getName();
 
-        
-        if (authentication.getPrincipal() == null || jwtToken == null) {
-            throw new AuthenticationCredentialsNotFoundException("Authentication token is missing");
-        }
+	if (authentication.getPrincipal() == null || jwtToken == null) {
+	    throw new AuthenticationCredentialsNotFoundException("Authentication token is missing");
+	}
 
+	final SignedJWT signedJWT;
+	try {
+	    signedJWT = SignedJWT.parse(jwtToken);
 
-        final SignedJWT signedJWT;
-        try {
-            signedJWT = SignedJWT.parse(jwtToken);
+	    boolean isVerified = signedJWT.verify(new MACVerifier(SecurityConstant.JWT_SECRET.getBytes()));
 
-            boolean isVerified = signedJWT.verify(new MACVerifier(SecurityConstant.JWT_SECRET.getBytes()));
+	    if (!isVerified) {
+		throw new BadCredentialsException("Invalid token signature");
+	    }
 
-            if(!isVerified){
-                throw new BadCredentialsException("Invalid token signature");
-            }
+	    // is token expired ?
+	    LocalDateTime expirationTime = LocalDateTime
+		    .ofInstant(signedJWT.getJWTClaimsSet().getExpirationTime().toInstant(), ZoneId.systemDefault());
 
-            //is token expired ?
-            LocalDateTime expirationTime = LocalDateTime.ofInstant(
-                    signedJWT.getJWTClaimsSet().getExpirationTime().toInstant(), ZoneId.systemDefault());
+	    if (LocalDateTime.now(ZoneId.systemDefault()).isAfter(expirationTime)) {
+		throw new CredentialsExpiredException("Token expired");
+	    }
 
-            if (LocalDateTime.now(ZoneId.systemDefault()).isAfter(expirationTime)) {
-                throw new CredentialsExpiredException("Token expired");
-            }
+	    return new JWTAuthenticationToken(signedJWT, null, null);
 
-            return new JWTAuthenticationToken(signedJWT, null, null);
-
-        } catch (ParseException e) {
-            throw new InternalAuthenticationServiceException("Unreadable token");
-        } catch (JOSEException e) {
-            throw new InternalAuthenticationServiceException("Unreadable signature");
-        }
+	} catch (ParseException e) {
+	    throw new InternalAuthenticationServiceException("Unreadable token");
+	} catch (JOSEException e) {
+	    throw new InternalAuthenticationServiceException("Unreadable signature");
+	}
     }
 }
