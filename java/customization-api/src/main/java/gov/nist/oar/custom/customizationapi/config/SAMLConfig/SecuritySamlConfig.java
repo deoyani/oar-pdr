@@ -83,6 +83,9 @@ import java.util.Timer;
 import javax.servlet.http.HttpServletRequest;
 
 /**
+ * This class reads configurations values from config server and set ups the SAML service related 
+ * parameters. It also helps to initialize different SAML endpoints, creates handshake with SAML identity service
+ * It sets up saml relay point to create further communication between user application with the server.
  * @author Deoyani Nandrekar-Heinis
  */
 @Configuration
