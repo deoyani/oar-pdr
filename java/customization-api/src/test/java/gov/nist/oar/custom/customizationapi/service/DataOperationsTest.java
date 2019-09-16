@@ -42,8 +42,10 @@ import gov.nist.oar.custom.customizationapi.exceptions.CustomizationException;
 import gov.nist.oar.custom.customizationapi.service.DatabaseOperations;
 
 /**
- * This class contains unit tests for different methods/functions available in DataOperations class
- * This class deals with checking and updating records in the cache and send final updates to backend server
+ * This class contains unit tests for different methods/functions available in
+ * DataOperations class This class deals with checking and updating records in
+ * the cache and send final updates to backend server
+ * 
  * @author Deoyani Nandrekar-Heinis
  *
  */
@@ -54,76 +56,72 @@ public class DataOperationsTest {
     private MongoClient mockClient;
     @Mock
     private MongoCollection<Document> mockCollection;
-    
+
     @Mock
     private MongoCollection<Document> mockChangeCollection;
-    
+
     @Mock
     private MongoDatabase mockDB;
-    
-    private String mdserver ="http://testdata.nist.gov/rmm/records/";
+
+    private String mdserver = "http://testdata.nist.gov/rmm/records/";
     private static DatabaseOperations mockDataOperations;
     private static Document change;
     private static Document updatedRecord;
-    private static String recordid ="FDB5909746815200E043065706813E54137";
-
+    private static String recordid = "FDB5909746815200E043065706813E54137";
 
     @Before
     public void initMocks() throws IOException, ResourceNotFoundException, CustomizationException {
 	mockDataOperations = mock(DatabaseOperations.class);
-       when(mockClient.getDatabase("UpdateDB")).thenReturn(mockDB);
-       when(mockDB.getCollection("record")).thenReturn(mockCollection);
-       when(mockDB.getCollection("change")).thenReturn(mockChangeCollection);
-       ReflectionTestUtils.setField(mockDataOperations, "mdserver", "https://testdata.nist.gov/rmm/records/");
+	when(mockClient.getDatabase("UpdateDB")).thenReturn(mockDB);
+	when(mockDB.getCollection("record")).thenReturn(mockCollection);
+	when(mockDB.getCollection("change")).thenReturn(mockChangeCollection);
+	ReflectionTestUtils.setField(mockDataOperations, "mdserver", "https://testdata.nist.gov/rmm/records/");
 
-       String recorddata = new String ( Files.readAllBytes( 
-	       Paths.get(
-		       this.getClass().getClassLoader().getResource("record.json").getFile())));
-       Document recordDoc = Document.parse(recorddata);
-       
-       String changedata = new String ( Files.readAllBytes( 
-	       Paths.get(
-		       this.getClass().getClassLoader().getResource("changes.json").getFile())));
-       change = Document.parse(changedata);
-       
-       String updateddata = new String ( Files.readAllBytes( 
-	       Paths.get(
-		       this.getClass().getClassLoader().getResource("updatedRecord.json").getFile())));
-       updatedRecord = Document.parse(updateddata);
-        
-      MockitoAnnotations.initMocks(this);
-      when(mockDataOperations.getData(recordid, mockCollection)).thenReturn(recordDoc);
-      when(mockDataOperations.getUpdatedData(recordid, mockCollection)).thenReturn(updatedRecord); 
-      when(mockDataOperations.getUpdatedData(recordid, mockChangeCollection)).thenReturn(change); 
-      when(mockDataOperations.checkRecordInCache(recordid, mockCollection)).thenReturn(true);
+	String recorddata = new String(
+		Files.readAllBytes(Paths.get(this.getClass().getClassLoader().getResource("record.json").getFile())));
+	Document recordDoc = Document.parse(recorddata);
+
+	String changedata = new String(
+		Files.readAllBytes(Paths.get(this.getClass().getClassLoader().getResource("changes.json").getFile())));
+	change = Document.parse(changedata);
+
+	String updateddata = new String(Files
+		.readAllBytes(Paths.get(this.getClass().getClassLoader().getResource("updatedRecord.json").getFile())));
+	updatedRecord = Document.parse(updateddata);
+
+	MockitoAnnotations.initMocks(this);
+	when(mockDataOperations.getData(recordid, mockCollection)).thenReturn(recordDoc);
+	when(mockDataOperations.getUpdatedData(recordid, mockCollection)).thenReturn(updatedRecord);
+	when(mockDataOperations.getUpdatedData(recordid, mockChangeCollection)).thenReturn(change);
+	when(mockDataOperations.checkRecordInCache(recordid, mockCollection)).thenReturn(true);
 //      when(mockDataOperations.putDataInCacheOnlyChanges(change, mockChangeCollection)).thenReturn(recordDoc);
 
     }
-    
+
     @Test
-    public void testGetData() throws ResourceNotFoundException, CustomizationException{
+    public void testGetData() throws ResourceNotFoundException, CustomizationException {
 	Document d = mockDataOperations.getData(recordid, mockCollection);
 	assertNotNull(d);
-        assertEquals("New Title Update Test May 7", d.get("title"));
+	assertEquals("New Title Update Test May 7", d.get("title"));
     }
-    
+
     @Test
-    public void testPutDataInCacheOnlyChanges(){
+    public void testPutDataInCacheOnlyChanges() {
 	mockDataOperations.putDataInCacheOnlyChanges(change, mockChangeCollection);
 	Document updatedRecord = mockDataOperations.getUpdatedData(recordid, mockChangeCollection);
 	assertNotNull(updatedRecord);
 	assertNotEquals("New Title Update Test May 7", updatedRecord.get("title"));
-	assertEquals("New Title Update Test May 14", updatedRecord.get("title"));	
+	assertEquals("New Title Update Test May 14", updatedRecord.get("title"));
     }
-   
+
     @Test
-    public void testCheckRecordInCache(){
+    public void testCheckRecordInCache() {
 	boolean isPresent = mockDataOperations.checkRecordInCache(recordid, mockCollection);
 	assertEquals(isPresent, true);
     }
-    
+
     @Test
-    public void testUpdatedDataInCache(){
+    public void testUpdatedDataInCache() {
 	mockDataOperations.putDataInCache(recordid, mockCollection);
 	Document updatedRecord = mockDataOperations.getUpdatedData(recordid, mockCollection);
 	assertNotNull(updatedRecord);

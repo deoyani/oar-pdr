@@ -9,9 +9,12 @@ import org.opensaml.saml2.metadata.provider.HTTPMetadataProvider;
 import org.opensaml.saml2.metadata.provider.MetadataProvider;
 import org.opensaml.saml2.metadata.provider.MetadataProviderException;
 import org.opensaml.saml2.metadata.provider.ResourceBackedMetadataProvider;
-import org.opensaml.util.resource.ClasspathResource;
+//import org.opensaml.util.resource.ClasspathResource;
+//import org.opensaml.util.resource.Resource;
 import org.opensaml.util.resource.ResourceException;
 import org.opensaml.xml.parse.StaticBasicParserPool;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -21,6 +24,8 @@ import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.ClassPathResource;
+import org.springframework.core.io.FileSystemResource;
+import org.springframework.core.io.Resource;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
@@ -70,6 +75,7 @@ import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import org.springframework.web.filter.CorsFilter;
 
+import gov.nist.oar.custom.customizationapi.exceptions.ConfigurationException;
 import gov.nist.oar.custom.customizationapi.service.SamlUserDetailsService;
 
 import java.util.ArrayList;
@@ -83,13 +89,17 @@ import java.util.Timer;
 import javax.servlet.http.HttpServletRequest;
 
 /**
- * This class reads configurations values from config server and set ups the SAML service related 
- * parameters. It also helps to initialize different SAML endpoints, creates handshake with SAML identity service
- * It sets up saml relay point to create further communication between user application with the server.
+ * This class reads configurations values from config server and set ups the
+ * SAML service related parameters. It also helps to initialize different SAML
+ * endpoints, creates handshake with SAML identity service It sets up saml relay
+ * point to create further communication between user application with the
+ * server.
+ * 
  * @author Deoyani Nandrekar-Heinis
  */
 @Configuration
 public class SecuritySamlConfig extends WebSecurityConfigurerAdapter {
+    private static Logger logger = LoggerFactory.getLogger(SecuritySamlConfig.class);
 
     @Value("${saml.metdata.entityid:testid}")
     String entityId;
@@ -111,21 +121,22 @@ public class SecuritySamlConfig extends WebSecurityConfigurerAdapter {
 
     @Value("${auth.federation.metadata:fedmetadata}")
     String federationMetadata;
-    
+
     @Value("${saml.scheme:samlscheme}")
     String samlScheme;
-    
+
     @Value("${saml.server.name:keypass}")
     String samlServer;
-    
+
     @Value("${saml.server.context-path:keypass}")
     String samlContext;
 
     @Value("${application.url:http://localhost:4200}")
-    String applicationUrl;
+    String applicationURL;
 
     @Bean
-    public WebSSOProfileOptions defaultWebSSOProfileOptions() {
+    public WebSSOProfileOptions defaultWebSSOProfileOptions() throws ConfigurationException {
+	logger.info("Setting up authticated service redirect by setting web sso profiles.");
 	WebSSOProfileOptions webSSOProfileOptions = new WebSSOProfileOptions();
 	webSSOProfileOptions.setIncludeScoping(false);
 	// Relay state can also be set here
@@ -134,8 +145,9 @@ public class SecuritySamlConfig extends WebSecurityConfigurerAdapter {
     }
 
     @Bean
-    public SAMLEntryPoint samlEntryPoint() {
-	SAMLEntryPoint samlEntryPoint = new SamlWithRelayStateEntryPoint(applicationUrl);
+    public SAMLEntryPoint samlEntryPoint() throws ConfigurationException {
+	logger.info("SAML Entry point. with application url " + applicationURL);
+	SAMLEntryPoint samlEntryPoint = new SamlWithRelayStateEntryPoint(applicationURL);
 	samlEntryPoint.setDefaultProfileOptions(defaultWebSSOProfileOptions());
 	return samlEntryPoint;
     }
@@ -157,9 +169,16 @@ public class SecuritySamlConfig extends WebSecurityConfigurerAdapter {
     }
 
     @Bean
-    public SAMLProcessingFilter samlWebSSOProcessingFilter() throws Exception {
+    public SAMLProcessingFilter samlWebSSOProcessingFilter() throws ConfigurationException {
+	logger.info("SAMLProcessingFilter adding authentication manager.");
 	SAMLProcessingFilter samlWebSSOProcessingFilter = new SAMLProcessingFilter();
-	samlWebSSOProcessingFilter.setAuthenticationManager(authenticationManager());
+	try {
+	    samlWebSSOProcessingFilter.setAuthenticationManager(authenticationManager());
+	} catch (Exception e) {
+	    // TODO Auto-generated catch block
+	    // e.printStackTrace();
+	    throw new ConfigurationException("Exception while setting up Authentication Manager:" + e.getMessage());
+	}
 	samlWebSSOProcessingFilter.setAuthenticationSuccessHandler(successRedirectHandler());
 	samlWebSSOProcessingFilter.setAuthenticationFailureHandler(authenticationFailureHandler());
 	return samlWebSSOProcessingFilter;
@@ -172,6 +191,7 @@ public class SecuritySamlConfig extends WebSecurityConfigurerAdapter {
 
     @Bean
     public SecurityContextLogoutHandler logoutHandler() {
+	logger.info("In SecurityContextLogoutHandler, setinvalid httpsession and clear authentication to true.");
 	SecurityContextLogoutHandler logoutHandler = new SecurityContextLogoutHandler();
 	logoutHandler.setInvalidateHttpSession(true);
 	logoutHandler.setClearAuthentication(true);
@@ -190,12 +210,13 @@ public class SecuritySamlConfig extends WebSecurityConfigurerAdapter {
     }
 
     @Bean
-    public MetadataGeneratorFilter metadataGeneratorFilter() {
+    public MetadataGeneratorFilter metadataGeneratorFilter() throws ConfigurationException {
 	return new MetadataGeneratorFilter(metadataGenerator());
     }
 
     @Bean
-    public MetadataGenerator metadataGenerator() {
+    public MetadataGenerator metadataGenerator() throws ConfigurationException {
+	logger.info("Metadata generator : sets the entity id and base url to establish communication with ID server.");
 	MetadataGenerator metadataGenerator = new MetadataGenerator();
 	metadataGenerator.setEntityId(entityId);
 	metadataGenerator.setEntityBaseURL(entityBaseURL);
@@ -206,12 +227,19 @@ public class SecuritySamlConfig extends WebSecurityConfigurerAdapter {
     }
 
     @Bean
-    public KeyManager keyManager() {
-	ClassPathResource storeFile = new ClassPathResource(keyPath);
-	String storePass = keystorePass;
-	Map<String, String> passwords = new HashMap<>();
-	passwords.put(keyAlias, keyPass);
-	return new JKSKeyManager(storeFile, storePass, passwords, keyAlias);
+    public KeyManager keyManager() throws ConfigurationException {
+	logger.info("Read keystore key.");
+	try {
+
+	    // ClassPathResource storeFile = new ClassPathResource(keyPath);
+	    Resource storeFile = new FileSystemResource(keyPath);
+	    String storePass = keystorePass;
+	    Map<String, String> passwords = new HashMap<>();
+	    passwords.put(keyAlias, keyPass);
+	    return new JKSKeyManager(storeFile, storePass, passwords, keyAlias);
+	} catch (Exception e) {
+	    throw new ConfigurationException("Exception while loding keystore key, " + e.getMessage());
+	}
     }
 
     @Bean
@@ -223,7 +251,8 @@ public class SecuritySamlConfig extends WebSecurityConfigurerAdapter {
     }
 
     @Bean
-    public FilterChainProxy samlFilter() throws Exception {
+    public FilterChainProxy samlFilter() throws ConfigurationException {
+	logger.info("Setting up different saml filters and endpoints");
 	List<SecurityFilterChain> chains = new ArrayList<>();
 
 	chains.add(new DefaultSecurityFilterChain(new AntPathRequestMatcher("/saml/metadata/**"),
@@ -248,17 +277,18 @@ public class SecuritySamlConfig extends WebSecurityConfigurerAdapter {
     }
 
     @Bean
-    public ProtocolSocketFactory socketFactory() {
+    public ProtocolSocketFactory socketFactory() throws ConfigurationException {
 	return new TLSProtocolSocketFactory(keyManager(), null, "default");
     }
 
     @Bean
-    public Protocol socketFactoryProtocol() {
+    public Protocol socketFactoryProtocol() throws ConfigurationException {
 	return new Protocol("https", socketFactory(), 443);
     }
 
     @Bean
-    public MethodInvokingFactoryBean socketFactoryInitialization() {
+    public MethodInvokingFactoryBean socketFactoryInitialization() throws ConfigurationException {
+	logger.info("Socket factory initialization.");
 	MethodInvokingFactoryBean methodInvokingFactoryBean = new MethodInvokingFactoryBean();
 	methodInvokingFactoryBean.setTargetClass(Protocol.class);
 	methodInvokingFactoryBean.setTargetMethod("registerProtocol");
@@ -321,7 +351,8 @@ public class SecuritySamlConfig extends WebSecurityConfigurerAdapter {
     }
 
     @Bean
-    public SAMLContextProviderImpl contextProvider() {
+    public SAMLContextProviderImpl contextProvider() throws ConfigurationException {
+	logger.info("SAML context provider.");
 	SAMLContextProviderLB samlContextProviderLB = new SAMLContextProviderLB();
 	samlContextProviderLB.setScheme(samlScheme);
 	samlContextProviderLB.setServerName(samlServer);
@@ -364,35 +395,47 @@ public class SecuritySamlConfig extends WebSecurityConfigurerAdapter {
     }
 
     @Bean
-    public ExtendedMetadataDelegate idpMetadata() throws MetadataProviderException, ResourceException {
+    public ExtendedMetadataDelegate idpMetadata() throws ConfigurationException {
+	logger.info("Read the federation metadata provided by identity provider.");
+	// throws MetadataProviderException, ResourceException {
+	try {
+	    Timer backgroundTaskTimer = new Timer(true);
 
-	Timer backgroundTaskTimer = new Timer(true);
-
-	ResourceBackedMetadataProvider resourceBackedMetadataProvider = new ResourceBackedMetadataProvider(
-		backgroundTaskTimer, new ClasspathResource(federationMetadata));
+	    org.opensaml.util.resource.FilesystemResource fpath = new org.opensaml.util.resource.FilesystemResource(
+		    federationMetadata);
+	    ResourceBackedMetadataProvider resourceBackedMetadataProvider = new ResourceBackedMetadataProvider(
+		    backgroundTaskTimer, fpath);
+	    // new ClasspathResource(federationMetadata));
 
 //        String fedMetadataURL = "https://sts.nist.gov/federationmetadata/2007-06/federationmetadata.xml";
 //	HTTPMetadataProvider httpMetadataProvider = new HTTPMetadataProvider(
 //			backgroundTaskTimer, httpClient(), fedMetadataURL);
 //	httpMetadataProvider.setParserPool(parserPool());
 
-	resourceBackedMetadataProvider.setParserPool(parserPool());
+	    resourceBackedMetadataProvider.setParserPool(parserPool());
 
-	ExtendedMetadataDelegate extendedMetadataDelegate = new ExtendedMetadataDelegate(resourceBackedMetadataProvider,
-		extendedMetadata());
+	    ExtendedMetadataDelegate extendedMetadataDelegate = new ExtendedMetadataDelegate(
+		    resourceBackedMetadataProvider, extendedMetadata());
 //        ExtendedMetadataDelegate extendedMetadataDelegate =
 //                new ExtendedMetadataDelegate(httpMetadataProvider , extendedMetadata());
 
-	//// **** just set this to false to solve the issue signature trust
-	//// establishment
-	extendedMetadataDelegate.setMetadataTrustCheck(false);
-	extendedMetadataDelegate.setMetadataRequireSignature(false);
-	return extendedMetadataDelegate;
+	    //// **** just set this to false to solve the issue signature trust
+	    //// establishment
+	    extendedMetadataDelegate.setMetadataTrustCheck(false);
+	    extendedMetadataDelegate.setMetadataRequireSignature(false);
+	    return extendedMetadataDelegate;
+	} catch (MetadataProviderException mpEx) {
+	    throw new ConfigurationException(
+		    "MetadataProviderException while reading federation metadata." + mpEx.getMessage());
+	} catch (ResourceException rEx) {
+	    throw new ConfigurationException(
+		    "ResourceException while reading federationmetadata for SAML identifier, " + rEx.getMessage());
+	}
     }
 
     @Bean
     @Qualifier("metadata")
-    public CachingMetadataManager metadata() throws MetadataProviderException, ResourceException {
+    public CachingMetadataManager metadata() throws ConfigurationException, MetadataProviderException {
 	List<MetadataProvider> providers = new ArrayList<>();
 	providers.add(idpMetadata());
 	return new CachingMetadataManager(providers);
@@ -417,27 +460,33 @@ public class SecuritySamlConfig extends WebSecurityConfigurerAdapter {
     }
 
     @Override
-    protected void configure(HttpSecurity http) throws Exception {
+    protected void configure(HttpSecurity http) throws ConfigurationException {
+	logger.info("Set up http security related filters for saml entrypoints");
 
-	http.addFilterBefore(corsFilter(), SessionManagementFilter.class).exceptionHandling()
-		.authenticationEntryPoint(samlEntryPoint());
-	http.csrf().disable();
+	try {
+	    http.addFilterBefore(corsFilter(), SessionManagementFilter.class).exceptionHandling()
+		    .authenticationEntryPoint(samlEntryPoint());
 
-	http.addFilterBefore(metadataGeneratorFilter(), ChannelProcessingFilter.class).addFilterAfter(samlFilter(),
-		BasicAuthenticationFilter.class);
+	    http.csrf().disable();
 
-	http.authorizeRequests().antMatchers("/error").permitAll().antMatchers("/saml/**").permitAll().anyRequest()
-		.authenticated();
+	    http.addFilterBefore(metadataGeneratorFilter(), ChannelProcessingFilter.class).addFilterAfter(samlFilter(),
+		    BasicAuthenticationFilter.class);
 
-	http.logout().logoutSuccessUrl("/");
+	    http.authorizeRequests().antMatchers("/error").permitAll().antMatchers("/saml/**").permitAll().anyRequest()
+		    .authenticated();
+
+	    http.logout().logoutSuccessUrl("/");
 
 //        http.cors();
+	} catch (Exception e) {
+	    throw new ConfigurationException("Exception in SAML security config for HttpSecurity," + e.getMessage());
+	}
 
     }
 
     @Bean
     CORSFilter corsFilter() {
-	CORSFilter filter = new CORSFilter(applicationUrl);
+	CORSFilter filter = new CORSFilter(applicationURL);
 	return filter;
     }
 
