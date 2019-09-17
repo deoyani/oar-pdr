@@ -1,5 +1,7 @@
 package gov.nist.oar.custom.customizationapi.service;
 
+import java.io.IOException;
+
 import org.bson.Document;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -45,7 +47,7 @@ public class BackendServerOperations {
      * @return
      * 
      */
-    public Document getDataFromServer(String mdserver, String recordid) {
+    public Document getDataFromServer(String mdserver, String recordid) throws IOException{
 	log.info("Call backend metadata server.");
 
 	RestTemplate restTemplate = new RestTemplate();
@@ -65,7 +67,7 @@ public class BackendServerOperations {
 	HttpHeaders headers = new HttpHeaders();
 	headers.add("Authorization", "Bearer "+this.mdsecret);
 	HttpEntity<Document> requestUpdate = new HttpEntity<>(doc, headers);
-	Document updatedDoc = (Document) restTemplate.patchForObject(mdserver, requestUpdate,
+	Document updatedDoc = (Document) restTemplate.patchForObject(mdserver+recordid, requestUpdate,
 		Document.class);
 	
 	return updatedDoc;
